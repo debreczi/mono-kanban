@@ -5,11 +5,15 @@ mono-kanban is a lightweight, self-hosted Kanban board built for solo developers
 ## Features
 
 - No database setup, just local JSON file storage
-- 7-column Kanban board: Backlog, To Do, In Progress, Review, On Hold, Done, Won't Do
-- Drag-and-drop cards between columns
-- Create, edit, and delete tasks with title, description, assignee, and priority
-- Token usage dashboard (`/usage.html`) — optional, requires a compatible data file
-- Cron status monitor (`/crons.html`) — optional, requires a compatible registry/status file
+- 7-column board with drag-and-drop task movement
+- Fast create, edit, and delete flow with assignees and priorities
+- Optional Token Usage dashboard at `/usage.html`
+- Optional Cron Status dashboard at `/crons.html`
+- Claude Code-friendly workflow with `backlog`, `todo`, `in_progress`, and `review` stages
+
+## Why This Exists
+
+Most Kanban tools are either too heavy, too collaborative, or too dependent on external services for a simple solo workflow. mono-kanban is built for the opposite case: one developer, one machine, fast local state, and enough structure to support both manual work and agent-driven automation.
 
 ## Prerequisites
 
@@ -29,6 +33,15 @@ Open [http://localhost:18790](http://localhost:18790) in your browser.
 `tasks.json` is created automatically on first run in the project directory.
 
 If you just want the core board, you can stop there. The usage and cron dashboards are optional.
+
+## Quick Start
+
+1. Start the server with `npm start`
+2. Open `http://localhost:18790`
+3. Create your first task in `Backlog`
+4. Drag tasks across the board as work progresses
+
+If you want automation later, add the optional dashboard data files or set up the Claude Code cron workflow below.
 
 ## Configuration
 
