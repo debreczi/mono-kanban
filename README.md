@@ -4,6 +4,7 @@ mono-kanban is a lightweight, self-hosted Kanban board built for solo developers
 
 ## Features
 
+- No database setup, just local JSON file storage
 - 7-column Kanban board: Backlog, To Do, In Progress, Review, On Hold, Done, Won't Do
 - Drag-and-drop cards between columns
 - Create, edit, and delete tasks with title, description, assignee, and priority
@@ -17,7 +18,7 @@ mono-kanban is a lightweight, self-hosted Kanban board built for solo developers
 ## Installation
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/debreczi/mono-kanban.git
 cd mono-kanban
 npm install
 npm start
@@ -26,6 +27,8 @@ npm start
 Open [http://localhost:18790](http://localhost:18790) in your browser.
 
 `tasks.json` is created automatically on first run in the project directory.
+
+If you just want the core board, you can stop there. The usage and cron dashboards are optional.
 
 ## Configuration
 

@@ -2,8 +2,17 @@
   "name": "mono-kanban",
   "version": "1.0.0",
   "description": "Lightweight self-hosted Kanban board for solo developers with drag-and-drop, local JSON storage, and optional usage dashboards.",
+  "keywords": [
+    "kanban",
+    "task-board",
+    "self-hosted",
+    "productivity",
+    "express",
+    "json-storage"
+  ],
   "type": "module",
   "main": "server.js",
+  "author": "Janos Debreczi",
   "scripts": {
     "start": "node server.js"
   },
@@ -11,6 +20,14 @@
     "node": ">=18.0.0"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/debreczi/mono-kanban.git"
+  },
+  "homepage": "https://github.com/debreczi/mono-kanban#readme",
+  "bugs": {
+    "url": "https://github.com/debreczi/mono-kanban/issues"
+  },
   "dependencies": {
     "express": "^4.21.0"
   }
