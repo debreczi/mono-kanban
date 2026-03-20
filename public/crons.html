@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cron Status — OpenClaw</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Page layout ── */
+    .usage-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    /* ── Summary strip ── */
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .stat-card .stat-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .stat-card .stat-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .stat-card.issues-card .stat-value {
+      color: #f87171;
+    }
+
+    /* ── Crons table ── */
+    .crons-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .crons-section .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0;
+      padding: 1.25rem 1.5rem 0.75rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    thead th {
+      background: var(--bg-column);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.65rem 1rem;
+      text-align: left;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background var(--transition);
+    }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+    tbody tr:hover {
+      background: var(--bg-card-hover);
+    }
+    tbody td {
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+    }
+    .empty-row td {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2.5rem 1rem;
+      font-style: italic;
+    }
+
+    /* ── Result badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3em;
+      padding: 0.2em 0.6em;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .badge-ok {
+      background: rgba(34, 197, 94, 0.18);
+      color: #4ade80;
+    }
+    .badge-failed {
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+    }
+    .badge-warning {
+      background: rgba(234, 179, 8, 0.18);
+      color: #facc15;
+    }
+    .badge-never {
+      background: rgba(136, 136, 164, 0.15);
+      color: var(--text-muted);
+    }
+
+    /* ── Cron name monospace ── */
+    .cron-name {
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      color: var(--accent);
+    }
+    .schedule-badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      background: rgba(67, 97, 238, 0.15);
+      color: #7a9bff;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+    }
+    .desc-cell {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      max-width: 300px;
+      white-space: normal;
+    }
+    .summary-cell {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      max-width: 250px;
+      white-space: normal;
+    }
+    .duration-cell {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .last-run-cell {
+      white-space: nowrap;
+    }
+    .stale-indicator {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #facc15;
+      margin-left: 0.4em;
+      vertical-align: middle;
+      title: "Stale — overdue";
+    }
+
+    /* ── Refresh button ── */
+    #btn-refresh {
+      min-width: 90px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      .summary-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 420px) {
+      .summary-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <nav class="top-bar-inner">
+      <a href="/" class="back-link">&larr; Kanban</a>
+      <h1 class="top-bar-title">Cron Status</h1>
+      <button id="btn-refresh" class="btn btn-ghost">Refresh</button>
+    </nav>
+  </header>
+
+  <main class="usage-main">
+    <!-- Summary strip -->
+    <div class="summary-strip">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-total">—</span>
+        <span class="stat-label">Total Crons</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-last-ok">—</span>
+        <span class="stat-label">Last Successful Run</span>
+      </div>
+      <div class="stat-card issues-card">
+        <span class="stat-value" id="stat-issues">—</span>
+        <span class="stat-label">Issues</span>
+      </div>
+    </div>
+
+    <!-- Crons table -->
+    <section class="crons-section">
+      <p class="section-title">Scheduled Crons</p>
+      <div class="table-wrap">
+        <table id="crons-table">
+          <thead>
+            <tr>
+              <th>Cron</th>
+              <th>Schedule</th>
+              <th>Last Run</th>
+              <th>Result</th>
+              <th>Duration</th>
+              <th>Summary</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="crons-body">
+            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ── Formatting helpers ──────────────────────────────────────────────────
+
+    function fmtDateTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function fmtDuration(sec) {
+      if (sec == null) return '—';
+      if (sec < 60) return sec + 's';
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return s > 0 ? `${m}m ${s}s` : `${m}m`;
+    }
+
+    function resultBadge(result, stale) {
+      if (stale && result === 'ok') {
+        return '<span class="badge badge-warning">&#9888; Stale</span>';
+      }
+      switch (result) {
+        case 'ok':      return '<span class="badge badge-ok">&#10003; OK</span>';
+        case 'failed':  return '<span class="badge badge-failed">&#10007; Failed</span>';
+        case 'warning': return '<span class="badge badge-warning">&#9888; Warning</span>';
+        case 'never':   return '<span class="badge badge-never">&#8212; Never run</span>';
+        default:        return `<span class="badge badge-never">${result}</span>`;
+      }
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────────
+
+    function renderSummary(crons) {
+      document.getElementById('stat-total').textContent = crons.length;
+
+      // Most recent ok lastRun across all crons
+      const okTimes = crons
+        .filter(c => c.result === 'ok' && c.lastRun)
+        .map(c => new Date(c.lastRun).getTime());
+      if (okTimes.length) {
+        const latest = new Date(Math.max(...okTimes));
+        document.getElementById('stat-last-ok').textContent = latest.toLocaleString(undefined, {
+          month: 'short', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      } else {
+        document.getElementById('stat-last-ok').textContent = '—';
+      }
+
+      // Issues: result != "ok" and != "never"
+      const issues = crons.filter(c => c.result !== 'ok' && c.result !== 'never').length
+        + crons.filter(c => c.stale && c.result === 'ok').length;
+      document.getElementById('stat-issues').textContent = issues;
+    }
+
+    function renderTable(crons) {
+      const tbody = document.getElementById('crons-body');
+      if (!crons.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No crons registered</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = crons.map(c => `
+        <tr>
+          <td><span class="cron-name">${escHtml(c.name)}</span></td>
+          <td>
+            <span class="schedule-badge" title="${escHtml(c.schedule)}">${escHtml(c.scheduleHuman || c.schedule)}</span>
+          </td>
+          <td class="last-run-cell">
+            ${fmtDateTime(c.lastRun)}${c.stale ? '<span class="stale-indicator" title="Overdue — may be stuck"></span>' : ''}
+          </td>
+          <td>${resultBadge(c.result, c.stale)}</td>
+          <td class="duration-cell">${fmtDuration(c.durationSeconds)}</td>
+          <td class="summary-cell">${escHtml(c.summary || '')}</td>
+          <td class="desc-cell">${escHtml(c.description || '')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ── Data fetching ───────────────────────────────────────────────────────
+
+    async function fetchAll() {
+      try {
+        const res = await fetch('/api/crons');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const crons = await res.json();
+        renderSummary(crons);
+        renderTable(crons);
+      } catch (err) {
+        console.error('Failed to fetch crons:', err);
+        document.getElementById('crons-body').innerHTML =
+          '<tr class="empty-row"><td colspan="7">Failed to load cron data</td></tr>';
+      }
+    }
+
+    // ── Init ────────────────────────────────────────────────────────────────
+
+    fetchAll();
+
+    // Auto-refresh every 30 seconds
+    setInterval(fetchAll, 30_000);
+
+    document.getElementById('btn-refresh').addEventListener('click', fetchAll);
+  </script>
+</body>
+</html>

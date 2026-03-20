@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Token Usage — OpenClaw</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Page layout ── */
+    .usage-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    /* ── Summary strip ── */
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .stat-card .stat-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .stat-card .stat-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Chart section ── */
+    .chart-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem 1rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.75rem;
+    }
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 1rem;
+    }
+    #cost-chart {
+      display: block;
+      width: 100%;
+      border-radius: var(--radius);
+    }
+
+    /* ── History table ── */
+    .history-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .history-section .section-title {
+      padding: 1.25rem 1.5rem 0;
+      margin-bottom: 0.75rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    thead th {
+      background: var(--bg-column);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.65rem 1rem;
+      text-align: left;
+      white-space: nowrap;
+      user-select: none;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: color var(--transition);
+    }
+    thead th:hover {
+      color: var(--text-primary);
+    }
+    thead th .sort-arrow {
+      display: inline-block;
+      margin-left: 0.3em;
+      opacity: 0.4;
+      font-size: 0.7em;
+    }
+    thead th.sorted .sort-arrow {
+      opacity: 1;
+      color: var(--accent);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background var(--transition);
+    }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+    tbody tr:hover {
+      background: var(--bg-card-hover);
+    }
+    tbody td {
+      padding: 0.7rem 1rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    .empty-row td {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2.5rem 1rem;
+      font-style: italic;
+    }
+
+    /* ── Trigger badges ── */
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.55em;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-cron {
+      background: rgba(136,136,164,0.2);
+      color: var(--text-secondary);
+    }
+    .badge-manual {
+      background: rgba(67,97,238,0.25);
+      color: #7a9bff;
+    }
+    .badge-historical {
+      background: rgba(85,85,112,0.25);
+      color: var(--text-muted);
+    }
+
+    /* ── Refresh button ── */
+    #btn-refresh {
+      min-width: 90px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      .summary-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 420px) {
+      .summary-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── API Spend section ── */
+    .api-spend-section {
+      margin-bottom: 1.75rem;
+    }
+    .section-header {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 0.75rem;
+      padding: 0;
+    }
+    .section-header.real-cost {
+      color: #f59e0b;
+    }
+    .section-header.covered {
+      color: var(--text-muted);
+    }
+    .covered-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0 0 1rem;
+      font-style: italic;
+    }
+    .summary-strip.api-strip {
+      margin-bottom: 0.75rem;
+    }
+    .stat-card.api-card {
+      border-left: 3px solid #f59e0b;
+    }
+    .stat-card.api-card .stat-value {
+      color: #f59e0b;
+    }
+    .badge-heartbeat {
+      background: rgba(136,136,164,0.2);
+      color: var(--text-secondary);
+    }
+    .badge-dev {
+      background: rgba(67,97,238,0.25);
+      color: #7a9bff;
+    }
+    .badge-telegram {
+      background: rgba(139,92,246,0.25);
+      color: #a78bfa;
+    }
+    .badge-manual {
+      background: rgba(20,184,166,0.2);
+      color: #5eead4;
+    }
+    .badge-unknown {
+      background: rgba(85,85,112,0.2);
+      color: var(--text-muted);
+    }
+    .api-footnote {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      padding: 0 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <nav class="top-bar-inner">
+      <a href="/" class="back-link">&larr; Kanban</a>
+      <h1 class="top-bar-title">Token Usage</h1>
+      <button id="btn-refresh" class="btn btn-ghost">Refresh</button>
+    </nav>
+  </header>
+
+  <main class="usage-main">
+    <!-- API Spend Section (real cost / Torin-ub key) -->
+    <div class="api-spend-section">
+      <p class="section-header real-cost">API Spend — Torin-ub Key (Real Cost)</p>
+      <!-- API spend summary strip -->
+      <div class="summary-strip api-strip">
+        <div class="stat-card api-card">
+          <span class="stat-value" id="api-stat-today">—</span>
+          <span class="stat-label">Today</span>
+        </div>
+        <div class="stat-card api-card">
+          <span class="stat-value" id="api-stat-week">—</span>
+          <span class="stat-label">This Week</span>
+        </div>
+        <div class="stat-card api-card">
+          <span class="stat-value" id="api-stat-month">—</span>
+          <span class="stat-label">This Month</span>
+        </div>
+        <div class="stat-card api-card">
+          <span class="stat-value" id="api-stat-alltime">—</span>
+          <span class="stat-label">All-Time</span>
+        </div>
+      </div>
+      <!-- API session history table -->
+      <section class="history-section">
+        <p class="section-title">OpenClaw Agent Sessions</p>
+        <div class="table-wrap">
+          <table id="api-history-table">
+            <thead>
+              <tr>
+                <th data-col="timestamp">Date / Time <span class="sort-arrow">▼</span></th>
+                <th data-col="trigger">Trigger <span class="sort-arrow">▼</span></th>
+                <th data-col="model">Model <span class="sort-arrow">▼</span></th>
+                <th data-col="inputTokens">Input <span class="sort-arrow">▼</span></th>
+                <th data-col="cacheReadTokens">Cache R <span class="sort-arrow">▼</span></th>
+                <th data-col="cacheWriteTokens">Cache W <span class="sort-arrow">▼</span></th>
+                <th data-col="outputTokens">Output <span class="sort-arrow">▼</span></th>
+                <th data-col="actualCostUSD">Actual Cost <span class="sort-arrow">▼</span></th>
+              </tr>
+            </thead>
+            <tbody id="api-history-body">
+              <tr class="empty-row"><td colspan="8">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="api-footnote">Costs from OpenClaw agent session logs (Torin-ub key — real charges apply).</p>
+      </section>
+    </div>
+
+    <p class="section-header covered">Claude Code Sessions (Pro Subscription — Covered)</p>
+    <p class="covered-note">These costs are covered by the Pro subscription — no incremental charge.</p>
+
+    <!-- Summary strip -->
+    <div class="summary-strip">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-today">—</span>
+        <span class="stat-label">Today</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-week">—</span>
+        <span class="stat-label">This Week</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-alltime">—</span>
+        <span class="stat-label">All-Time</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-sessions">—</span>
+        <span class="stat-label">Total Sessions</span>
+      </div>
+    </div>
+
+    <!-- Daily cost bar chart -->
+    <section class="chart-section">
+      <p class="section-title">Daily Cost (USD)</p>
+      <canvas id="cost-chart" height="180"></canvas>
+    </section>
+
+    <!-- Run history table -->
+    <section class="history-section">
+      <p class="section-title">Run History</p>
+      <div class="table-wrap">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th data-col="timestamp">Date / Time <span class="sort-arrow">▼</span></th>
+              <th data-col="trigger">Trigger <span class="sort-arrow">▼</span></th>
+              <th data-col="inputTokens">Input <span class="sort-arrow">▼</span></th>
+              <th data-col="cacheWriteTokens">Cache Write <span class="sort-arrow">▼</span></th>
+              <th data-col="cacheReadTokens">Cache Read <span class="sort-arrow">▼</span></th>
+              <th data-col="outputTokens">Output <span class="sort-arrow">▼</span></th>
+              <th data-col="estimatedCostUSD">Est. Cost <span class="sort-arrow">▼</span></th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ── API Spend (Torin-ub key) ────────────────────────────────────────────
+
+    let apiTableData = [];
+    let apiSortCol   = 'timestamp';
+    let apiSortAsc   = false;
+
+    function apiBadge(trigger) {
+      const t = (trigger || 'unknown').toLowerCase();
+      const cls = t === 'heartbeat' ? 'badge-heartbeat'
+                : t === 'dev'       ? 'badge-dev'
+                : t === 'telegram'  ? 'badge-telegram'
+                : t === 'manual'    ? 'badge-manual'
+                : 'badge-unknown';
+      return `<span class="badge ${cls}">${t}</span>`;
+    }
+
+    function fmtActualCost(usd) {
+      if (usd == null) return '—';
+      const n = Number(usd);
+      return n < 0.10 ? '$' + n.toFixed(4) : '$' + n.toFixed(2);
+    }
+
+    function fmtModel(m) {
+      if (!m) return '—';
+      return m.replace('claude-', '').replace('-latest', '');
+    }
+
+    function renderApiSummary(s) {
+      document.getElementById('api-stat-today').textContent   = fmtActualCost(s.todayCost);
+      document.getElementById('api-stat-week').textContent    = fmtActualCost(s.weekCost);
+      document.getElementById('api-stat-month').textContent   = fmtActualCost(s.monthCost);
+      document.getElementById('api-stat-alltime').textContent = fmtActualCost(s.totalCostUsd);
+    }
+
+    function renderApiTable() {
+      const tbody = document.getElementById('api-history-body');
+      if (!apiTableData.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No API sessions recorded yet</td></tr>';
+        return;
+      }
+      const sorted = [...apiTableData].sort((a, b) => {
+        let av = a[apiSortCol], bv = b[apiSortCol];
+        if (typeof av === 'string') av = av.toLowerCase();
+        if (typeof bv === 'string') bv = bv.toLowerCase();
+        if (av < bv) return apiSortAsc ? -1 :  1;
+        if (av > bv) return apiSortAsc ?  1 : -1;
+        return 0;
+      });
+      tbody.innerHTML = sorted.slice(0, 100).map(r => `
+        <tr title="Session: ${r.sessionId || ''}">
+          <td>${fmtDateTime(r.timestamp)}</td>
+          <td>${apiBadge(r.trigger)}</td>
+          <td style="color:var(--text-secondary);font-size:0.8rem">${fmtModel(r.model)}</td>
+          <td>${fmtTokens(r.inputTokens)}</td>
+          <td>${fmtTokens(r.cacheReadTokens)}</td>
+          <td>${fmtTokens(r.cacheWriteTokens)}</td>
+          <td>${fmtTokens(r.outputTokens)}</td>
+          <td style="font-weight:600;color:#f59e0b">${fmtActualCost(r.actualCostUSD)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function initApiSortHeaders() {
+      document.querySelectorAll('#api-history-table thead th').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          if (apiSortCol === col) {
+            apiSortAsc = !apiSortAsc;
+          } else {
+            apiSortCol = col;
+            apiSortAsc = col !== 'timestamp' && col !== 'actualCostUSD';
+          }
+          document.querySelectorAll('#api-history-table thead th').forEach(h => {
+            h.classList.remove('sorted');
+            h.querySelector('.sort-arrow').textContent = '▼';
+          });
+          th.classList.add('sorted');
+          th.querySelector('.sort-arrow').textContent = apiSortAsc ? '▲' : '▼';
+          renderApiTable();
+        });
+      });
+      const defaultTh = document.querySelector('#api-history-table thead th[data-col="timestamp"]');
+      if (defaultTh) {
+        defaultTh.classList.add('sorted');
+        defaultTh.querySelector('.sort-arrow').textContent = '▼';
+      }
+    }
+
+    // Data flow: JSONL session files → parse-session.sh → /api/usage → usage.html
+
+    const PRICING_USD_PER_MTOK = {
+      input:       3.00,
+      output:     15.00,
+      cacheWrite:  3.75,
+      cacheRead:   0.30,
+    };
+
+    // ── Formatting helpers ──────────────────────────────────────────────────
+
+    function fmtCost(usd) {
+      if (usd == null) return '—';
+      return '$' + Number(usd).toFixed(4);
+    }
+
+    function fmtTokens(n) {
+      if (n == null) return '—';
+      if (n === 0) return '0';
+      const k = n / 1000;
+      return k >= 1
+        ? k.toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'k'
+        : n.toLocaleString();
+    }
+
+    function fmtDateTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function fmtDayCost(usd) {
+      if (!usd) return '$0';
+      if (usd < 0.01) return '<$0.01';
+      return '$' + Number(usd).toFixed(2);
+    }
+
+    // ── Summary strip ───────────────────────────────────────────────────────
+
+    function renderSummary(s) {
+      document.getElementById('stat-today').textContent    = fmtCost(s.todayCost);
+      document.getElementById('stat-week').textContent     = fmtCost(s.weekCost);
+      document.getElementById('stat-alltime').textContent  = fmtCost(s.totalCostUsd);
+      document.getElementById('stat-sessions').textContent = s.totalSessions ?? '0';
+    }
+
+    // ── Bar chart ───────────────────────────────────────────────────────────
+
+    function renderChart(byDay) {
+      const canvas = document.getElementById('cost-chart');
+      const ctx    = canvas.getContext('2d');
+
+      // Use last 14 days
+      const days = byDay.slice(-14);
+
+      // DPR-aware sizing
+      const dpr = window.devicePixelRatio || 1;
+      const W   = canvas.offsetWidth  || canvas.parentElement.offsetWidth || 900;
+      const H   = 180;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.height = H + 'px';
+      ctx.scale(dpr, dpr);
+
+      // Theme colours (CSS variables not easily accessible in canvas, using literals)
+      const BG_CANVAS  = '#1a1a2e';
+      const ACCENT     = '#4361ee';
+      const TEXT_SEC   = '#8888a4';
+      const TEXT_MUT   = '#555570';
+      const AXIS_LINE  = 'rgba(255,255,255,0.08)';
+
+      ctx.fillStyle = BG_CANVAS;
+      ctx.fillRect(0, 0, W, H);
+
+      if (!days.length) {
+        ctx.fillStyle = TEXT_MUT;
+        ctx.font = '13px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data yet', W / 2, H / 2);
+        return;
+      }
+
+      const maxCost = Math.max(...days.map(d => d.costUsd || 0), 0.001);
+
+      const PAD_LEFT   = 58;
+      const PAD_RIGHT  = 16;
+      const PAD_TOP    = 14;
+      const PAD_BOTTOM = 38;
+      const chartW     = W - PAD_LEFT - PAD_RIGHT;
+      const chartH     = H - PAD_TOP - PAD_BOTTOM;
+
+      const barCount   = days.length;
+      const barGap     = 6;
+      const barW       = Math.max(4, (chartW / barCount) - barGap);
+
+      // Y-axis grid lines (4 lines)
+      ctx.strokeStyle = AXIS_LINE;
+      ctx.lineWidth   = 1;
+      ctx.font        = '11px system-ui, sans-serif';
+      ctx.textAlign   = 'right';
+      ctx.fillStyle   = TEXT_SEC;
+      const ySteps = 4;
+      for (let i = 0; i <= ySteps; i++) {
+        const val = (maxCost / ySteps) * i;
+        const y   = PAD_TOP + chartH - (chartH * i / ySteps);
+        ctx.beginPath();
+        ctx.moveTo(PAD_LEFT, y);
+        ctx.lineTo(PAD_LEFT + chartW, y);
+        ctx.stroke();
+        ctx.fillText('$' + val.toFixed(3), PAD_LEFT - 6, y + 4);
+      }
+
+      // Bars + X labels
+      days.forEach((day, i) => {
+        const cost   = day.costUsd || 0;
+        const barH   = chartH * (cost / maxCost);
+        const x      = PAD_LEFT + i * (barW + barGap);
+        const y      = PAD_TOP + chartH - barH;
+
+        // Bar
+        ctx.fillStyle = ACCENT;
+        const radius  = Math.min(3, barW / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + barW - radius, y);
+        ctx.arcTo(x + barW, y, x + barW, y + radius, radius);
+        ctx.lineTo(x + barW, y + barH);
+        ctx.lineTo(x, y + barH);
+        ctx.arcTo(x, y, x + radius, y, radius);
+        ctx.closePath();
+        ctx.fill();
+
+        // X-axis label (short date)
+        const label = day.date ? day.date.slice(5) : ''; // MM-DD
+        ctx.fillStyle = TEXT_MUT;
+        ctx.font      = '10px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x + barW / 2, H - PAD_BOTTOM + 16);
+      });
+
+      // Axis line
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.moveTo(PAD_LEFT, PAD_TOP);
+      ctx.lineTo(PAD_LEFT, PAD_TOP + chartH);
+      ctx.lineTo(PAD_LEFT + chartW, PAD_TOP + chartH);
+      ctx.stroke();
+    }
+
+    // ── History table ───────────────────────────────────────────────────────
+
+    let tableData     = [];
+    let sortCol       = 'timestamp';
+    let sortAsc       = false;   // newest-first by default
+
+    function triggerBadge(trigger) {
+      const t   = (trigger || 'unknown').toLowerCase();
+      const cls = t === 'cron' ? 'badge-cron'
+                : t === 'manual' ? 'badge-manual'
+                : 'badge-historical';
+      return `<span class="badge ${cls}">${t}</span>`;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('history-body');
+      if (!tableData.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No sessions recorded yet</td></tr>';
+        return;
+      }
+
+      // Sort
+      const sorted = [...tableData].sort((a, b) => {
+        let av = a[sortCol], bv = b[sortCol];
+        if (typeof av === 'string') av = av.toLowerCase();
+        if (typeof bv === 'string') bv = bv.toLowerCase();
+        if (av < bv) return sortAsc ? -1 :  1;
+        if (av > bv) return sortAsc ?  1 : -1;
+        return 0;
+      });
+
+      tbody.innerHTML = sorted.map(r => `
+        <tr>
+          <td>${fmtDateTime(r.timestamp)}</td>
+          <td>${triggerBadge(r.trigger)}</td>
+          <td>${fmtTokens(r.inputTokens)}</td>
+          <td>${fmtTokens(r.cacheWriteTokens)}</td>
+          <td>${fmtTokens(r.cacheReadTokens)}</td>
+          <td>${fmtTokens(r.outputTokens)}</td>
+          <td>${fmtCost(r.estimatedCostUSD)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function initSortHeaders() {
+      document.querySelectorAll('#history-table thead th').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          if (sortCol === col) {
+            sortAsc = !sortAsc;
+          } else {
+            sortCol = col;
+            sortAsc = col !== 'timestamp'; // dates default desc
+          }
+          // Update header styles
+          document.querySelectorAll('#history-table thead th').forEach(h => {
+            h.classList.remove('sorted');
+            h.querySelector('.sort-arrow').textContent = '▼';
+          });
+          th.classList.add('sorted');
+          th.querySelector('.sort-arrow').textContent = sortAsc ? '▲' : '▼';
+          renderTable();
+        });
+      });
+      // Mark default sort column
+      const defaultTh = document.querySelector('#history-table thead th[data-col="timestamp"]');
+      if (defaultTh) {
+        defaultTh.classList.add('sorted');
+        defaultTh.querySelector('.sort-arrow').textContent = '▼';
+      }
+    }
+
+    // ── Data fetching ───────────────────────────────────────────────────────
+
+    async function fetchAll() {
+      const [summaryRes, usageRes, apiSummaryRes, apiUsageRes] = await Promise.all([
+        fetch('/api/usage/summary'),
+        fetch('/api/usage'),
+        fetch('/api/api-usage/summary'),
+        fetch('/api/api-usage'),
+      ]);
+
+      if (summaryRes.ok) {
+        const summary = await summaryRes.json();
+        renderSummary(summary);
+        renderChart(summary.byDay || []);
+      }
+
+      if (usageRes.ok) {
+        tableData = await usageRes.json();
+        renderTable();
+      }
+
+      if (apiSummaryRes.ok) {
+        const apiSummary = await apiSummaryRes.json();
+        renderApiSummary(apiSummary);
+      }
+
+      if (apiUsageRes.ok) {
+        apiTableData = await apiUsageRes.json();
+        renderApiTable();
+      }
+    }
+
+    // ── Init ────────────────────────────────────────────────────────────────
+
+    initSortHeaders();
+    initApiSortHeaders();
+    fetchAll();
+
+    // Auto-refresh every 60 seconds
+    setInterval(fetchAll, 60_000);
+
+    document.getElementById('btn-refresh').addEventListener('click', fetchAll);
+
+    // Redraw chart on window resize
+    window.addEventListener('resize', () => {
+      fetch('/api/usage/summary')
+        .then(r => r.ok ? r.json() : null)
+        .then(s => s && renderChart(s.byDay || []));
+    });
+  </script>
+</body>
+</html>

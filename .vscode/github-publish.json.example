@@ -1,0 +1,8 @@
+{
+  "remoteUrl": "https://github.com/debreczi/mono-kanban.git",
+  "branch": "master",
+  "githubUsername": "debreczi",
+  "githubToken": "PASTE_PERSONAL_ACCESS_TOKEN_HERE",
+  "gitUserName": "Your Name",
+  "gitUserEmail": "you@example.com"
+}

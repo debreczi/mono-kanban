@@ -1,0 +1,17 @@
+{
+  "name": "mono-kanban",
+  "version": "1.0.0",
+  "description": "Lightweight self-hosted Kanban board for solo developers with drag-and-drop, local JSON storage, and optional usage dashboards.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

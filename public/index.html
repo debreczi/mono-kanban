@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mono-kanban</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top-bar">
+    <nav class="top-bar-inner">
+      <h1 class="top-bar-title">mono-kanban</h1>
+      <a href="/usage.html" class="btn btn-ghost" style="margin-right: 0.5rem;">Token Usage</a>
+      <a href="/crons.html" class="btn btn-ghost" style="margin-right: 0.5rem;">Cron Status</a>
+      <button id="btn-new-task" class="btn btn-primary">+ New Task</button>
+    </nav>
+  </header>
+
+  <main class="board" id="board">
+    <section class="column" data-column="backlog">
+      <div class="column-header">
+        <h2>Backlog</h2>
+        <span class="count-badge" data-count="backlog">0</span>
+      </div>
+      <div class="card-list" data-drop="backlog"></div>
+    </section>
+
+    <section class="column" data-column="todo">
+      <div class="column-header">
+        <h2>To Do</h2>
+        <span class="count-badge" data-count="todo">0</span>
+      </div>
+      <div class="card-list" data-drop="todo"></div>
+    </section>
+
+    <section class="column" data-column="in_progress">
+      <div class="column-header">
+        <h2>In Progress</h2>
+        <span class="count-badge" data-count="in_progress">0</span>
+      </div>
+      <div class="card-list" data-drop="in_progress"></div>
+    </section>
+
+    <section class="column" data-column="review">
+      <div class="column-header">
+        <h2>Review</h2>
+        <span class="count-badge" data-count="review">0</span>
+      </div>
+      <div class="card-list" data-drop="review"></div>
+    </section>
+
+    <section class="column" data-column="on_hold">
+      <div class="column-header">
+        <h2>On Hold</h2>
+        <span class="count-badge" data-count="on_hold">0</span>
+      </div>
+      <div class="card-list" data-drop="on_hold"></div>
+    </section>
+
+    <section class="column" data-column="done">
+      <div class="column-header">
+        <h2>Done</h2>
+        <span class="count-badge" data-count="done">0</span>
+      </div>
+      <div class="card-list" data-drop="done"></div>
+    </section>
+
+    <section class="column" data-column="wont_do">
+      <div class="column-header">
+        <h2>Won't Do</h2>
+        <span class="count-badge" data-count="wont_do">0</span>
+      </div>
+      <div class="card-list" data-drop="wont_do"></div>
+    </section>
+  </main>
+
+  <!-- Modal overlay for create / edit -->
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <dialog class="modal" id="task-modal">
+      <header class="modal-header">
+        <h2 id="modal-title">New Task</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      </header>
+      <form id="task-form" class="modal-body">
+        <input type="hidden" id="task-id">
+
+        <label for="field-title">Title</label>
+        <input type="text" id="field-title" name="title" required placeholder="Task title">
+
+        <label for="field-description">Description</label>
+        <textarea id="field-description" name="description" rows="3" placeholder="Optional description"></textarea>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="field-assignee">Assignee</label>
+            <select id="field-assignee" name="assignee">
+              <option value="">Unassigned</option>
+              <option value="torin">Torin</option>
+              <option value="janos">Janos</option>
+              <option value="claude">Claude</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="field-priority">Priority</label>
+            <select id="field-priority" name="priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="field-column">Column</label>
+            <select id="field-column" name="column">
+              <option value="backlog">Backlog</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="on_hold">On Hold</option>
+              <option value="done">Done</option>
+              <option value="wont_do">Won't Do</option>
+            </select>
+          </div>
+        </div>
+
+        <footer class="modal-actions">
+          <button type="button" id="btn-delete" class="btn btn-danger" hidden>Delete</button>
+          <span class="spacer"></span>
+          <button type="button" id="btn-cancel" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="btn-save" class="btn btn-primary">Create</button>
+        </footer>
+      </form>
+    </dialog>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
